@@ -40,7 +40,6 @@ func NewProgress(
 			case <-ticker.C:
 				p.mutex.Lock()
 				if p.bytesRead == p.totalBytes {
-					close(p.stopCh)
 					return
 				}
 				bytesRead := humanize.Bytes(uint64(p.bytesRead))
