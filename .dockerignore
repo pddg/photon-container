@@ -1,0 +1,7 @@
+.env
+build
+e2e
+kubernetes
+.github
+.gitignore
+.git

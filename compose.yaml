@@ -1,0 +1,16 @@
+services:
+  photon:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - PHOTON_VERSION=${PHOTON_VERSION}
+        - PHOTON_SHA256SUM=${PHOTON_SHA256SUM}
+    environment:
+      # Small country code for testing
+      - PHOTON_WRAPPER_DATABASE_COUNTRY_CODE=ad
+      - PHOTON_WRAPPER_LOG_LEVEL=debug
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+      - "2322:2322"
