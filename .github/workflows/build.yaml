@@ -28,6 +28,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     needs: [test]
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
       - name: Get photon version
@@ -47,6 +50,23 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Determine image tags
+        id: tags
+        run: |
+          IMAGE=ghcr.io/pddg/photon
+          TAG="${{ steps.photon_metadata.outputs.version }}-rev.${{ steps.photon_metadata.outputs.revision }}"
+          if docker manifest inspect $IMAGE:$TAG > /dev/null 2>&1; then
+            echo "Tag $TAG already exists, skipping"
+            TAGS="latest"
+          else
+            echo "$TAG does not exist. It will be created."
+            TAGS="$TAG latest"
+          fi
+          echo "tags<<EOF" >> $GITHUB_OUTPUT
+          for t in $TAGS; do
+            echo $IMAGE:$t >> $GITHUB_OUTPUT
+          done
+          echo "EOF" >> $GITHUB_OUTPUT
       - name: Build and push
         uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
         with:
@@ -57,6 +77,8 @@ jobs:
           build-args: |
             PHOTON_VERSION=${{ steps.photon_metadata.outputs.version }}
             PHOTON_SHA256SUM=${{ steps.photon_metadata.outputs.sha256 }}
+            GIT_SHA=${{ github.sha }}
           tags: |
-            ghcr.io/pddg/photon:${{ steps.photon_metadata.outputs.version }}-rev.${{ steps.photon_metadata.outputs.revision }}
-            ghcr.io/pddg/photon:latest
+            ${{ steps.tags.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
