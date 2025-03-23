@@ -18,6 +18,7 @@ image:
 		-t photon-wrapper:latest \
 		--build-arg PHOTON_VERSION=$${PHOTON_VERSION} \
 		--build-arg PHOTON_SHA256SUM=$${PHOTON_SHA256SUM} \
+		--build-arg GIT_SHA=$(shell git rev-parse HEAD) \
 		.
 
 .PHONY: clean

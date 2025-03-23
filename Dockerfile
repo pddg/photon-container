@@ -19,6 +19,14 @@ RUN echo "${PHOTON_SHA256SUM}  /photon/photon.jar" | sha256sum -c -
 
 FROM gcr.io/distroless/java21-debian12:nonroot
 
+ARG PHOTON_VERSION
+ARG GIT_SHA
+
+LABEL maintainer="github.com/pddg" \
+      app.pddg.version.photon="${PHOTON_VERSION}" \
+      org.opencontainers.image.revision="${GIT_SHA}" \
+      org.opencontainers.image.source="https://github.com/pddg/photon-container"
+
 USER nonroot
 
 COPY --chown=nonroot:nonroot --from=builder /workdir/build/photon-wrapper /usr/local/bin/photon-wrapper
