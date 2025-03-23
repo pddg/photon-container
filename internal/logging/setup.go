@@ -12,12 +12,11 @@ func Configure(
 	logFormat string,
 	out io.Writer,
 ) (*slog.Logger, error) {
-	opts := &slog.HandlerOptions{
-		AddSource: true,
-	}
+	opts := &slog.HandlerOptions{}
 	switch logLevel {
 	case "debug":
 		opts.Level = slog.LevelDebug
+		opts.AddSource = true
 	case "info":
 		opts.Level = slog.LevelInfo
 	case "warn", "warning":
