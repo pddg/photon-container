@@ -58,5 +58,5 @@ jobs:
             PHOTON_VERSION=${{ steps.photon_metadata.outputs.version }}
             PHOTON_SHA256SUM=${{ steps.photon_metadata.outputs.sha256 }}
           tags: |
-            ghcr.io/pddg/photon:${{ steps.photon_metadata.outputs.version }}.${{ steps.photon_metadata.outputs.revision }}
+            ghcr.io/pddg/photon:${{ steps.photon_metadata.outputs.version }}-rev.${{ steps.photon_metadata.outputs.revision }}
             ghcr.io/pddg/photon:latest
