@@ -198,9 +198,10 @@ func Test_Migrator_MigrateByRemoveFirst(t *testing.T) {
 		migrator := photondata.NewMigrator(t.TempDir(), srv.Client(), photondata.WithPhotonURL(srv.URL))
 
 		// Exercise
-		// First migration. It should NOT be succeeded.
+		// First migration. It should succeed.
 		_, err := migrator.MigrateByRemoveFirst(t.Context(), t.TempDir())
-		require.Error(t, err)
+		require.NoError(t, err)
+		// Do not call actual migration function.
 		// Second migration. It should be blocked.
 		_, err = migrator.MigrateByRemoveFirst(t.Context(), t.TempDir())
 
