@@ -119,7 +119,7 @@ func (h *MigrateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Query().Get("force") == "true" {
 		options = append(options, updater.WithForceUpdate())
 	}
-	if r.URL.Query().Get("no_complession") == "true" {
+	if r.URL.Query().Get("no_compression") == "true" {
 		options = append(options, updater.WithUnarchiveOptions(
 			unarchiver.NoCompression(),
 		))
