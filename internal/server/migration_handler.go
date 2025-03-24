@@ -3,22 +3,18 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"io"
 	"net/http"
 	"time"
 
 	"github.com/pddg/photon-container/internal/logging"
 	"github.com/pddg/photon-container/internal/photondata"
+	"github.com/pddg/photon-container/internal/unarchiver"
+	"github.com/pddg/photon-container/internal/updater"
 )
 
 type Migrator interface {
 	State(ctx context.Context) (photondata.MigrationState, time.Time)
 	ResetState(ctx context.Context)
-}
-
-type Updater interface {
-	UpdateByLocalArchive(ctx context.Context, archive photondata.Archive, force bool) error
-	UpdateAsync(ctx context.Context, archive io.Reader) error
 }
 
 type MigrateStatusHandler struct {
@@ -56,6 +52,7 @@ func (h *MigrateStatusHandler) get(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *MigrateStatusHandler) delete(w http.ResponseWriter, r *http.Request) {
+	logging.FromContext(r.Context()).Info("Reset migration state")
 	h.migrator.ResetState(r.Context())
 	w.WriteHeader(http.StatusOK)
 }
@@ -67,14 +64,14 @@ func (h *MigrateStatusHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 type LocalMigrateHandler struct {
 	ctx      context.Context
 	migrator Migrator
-	updater  Updater
+	updater  updater.UpdaterInterface
 	archive  photondata.Archive
 }
 
 func NewLocalMigrateHandler(
 	ctx context.Context,
 	migrator Migrator,
-	updater Updater,
+	updater updater.UpdaterInterface,
 	archive photondata.Archive,
 ) *LocalMigrateHandler {
 	return &LocalMigrateHandler{
@@ -86,27 +83,18 @@ func NewLocalMigrateHandler(
 }
 
 func (h *LocalMigrateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var archive photondata.Archive
-	latest := r.URL.Query().Get("latest") == "true"
-	if latest {
-		archive = h.archive
-	} else {
-		userSpecified := r.URL.Query().Get("archive")
-		if userSpecified == "" {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("archive query parameter is required when latest is not set"))
-			return
-		}
-		archive = h.archive.FromArchiveName(userSpecified)
+	var options []updater.UpdateOption
+	userSpecified := r.URL.Query().Get("archive")
+	if userSpecified != "" {
+		options = append(options, updater.WithArchiveName(userSpecified))
 	}
 	forceMigrate := r.URL.Query().Get("force") == "true"
 	if forceMigrate {
-		logging.FromContext(h.ctx).WarnContext(h.ctx, "force migration initiated")
-		h.migrator.ResetState(r.Context())
+		options = append(options, updater.WithForceUpdate())
 	}
 	go func() {
 		// Do not use r.Context() here. It may be canceled before the update is finished.
-		if err := h.updater.UpdateByLocalArchive(h.ctx, archive, forceMigrate); err != nil {
+		if err := h.updater.DownloadAndUpdate(h.ctx, h.archive, options...); err != nil {
 			logging.FromContext(h.ctx).ErrorContext(h.ctx, "failed to update", "error", err)
 		}
 	}()
@@ -116,10 +104,10 @@ func (h *LocalMigrateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 
 type MigrateHandler struct {
 	ctx     context.Context
-	updater Updater
+	updater updater.UpdaterInterface
 }
 
-func NewMigrateHandler(ctx context.Context, updater Updater) *MigrateHandler {
+func NewMigrateHandler(ctx context.Context, updater updater.UpdaterInterface) *MigrateHandler {
 	return &MigrateHandler{
 		ctx:     ctx,
 		updater: updater,
@@ -127,8 +115,19 @@ func NewMigrateHandler(ctx context.Context, updater Updater) *MigrateHandler {
 }
 
 func (h *MigrateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if err := h.updater.UpdateAsync(h.ctx, r.Body); err != nil {
+	var options []updater.UpdateOption
+	if r.URL.Query().Get("force") == "true" {
+		options = append(options, updater.WithForceUpdate())
+	}
+	if r.URL.Query().Get("no_complession") == "true" {
+		options = append(options, updater.WithUnarchiveOptions(
+			unarchiver.NoCompression(),
+		))
+	}
+	if err := h.updater.UpdateAsync(h.ctx, r.Body, options...); err != nil {
 		logging.FromContext(h.ctx).ErrorContext(h.ctx, "failed to update", "error", err)
+		// Stop unnecessary request body reading.
+		r.Body.Close()
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

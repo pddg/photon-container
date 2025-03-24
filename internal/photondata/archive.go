@@ -50,10 +50,8 @@ func (a Archive) URL() string {
 }
 
 func (a Archive) FromArchiveName(name string) Archive {
-	return Archive{
-		baseURL:     a.baseURL,
-		archiveName: name,
-	}
+	a.archiveName = name
+	return a
 }
 
 type ArchiveOption func(*Archive)

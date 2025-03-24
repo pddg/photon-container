@@ -28,6 +28,8 @@ var (
 	archiveDownloadPath           string
 	downloadOnly                  bool
 	waitUntilDone                 bool
+	noComplessed                  bool
+	force                         bool
 	photonWrapperURL              string
 	progressIntervalStr           string
 	downloadSpeedLimitBytesPerSec string
@@ -45,6 +47,8 @@ func main() {
 	flag.StringVar(&photonWrapperURL, "photon-wrapper-url", getEnv("PHOTON_WRAPPER_URL", "http://localhost:8080"), "URL of the photon-wrapper server")
 	flag.BoolVar(&downloadOnly, "download-only", getEnv("PHOTON_UPDATER_DOWNLOAD_ONLY", "false") == "true", "only download the archive and exit")
 	flag.BoolVar(&waitUntilDone, "wait", getEnv("PHOTON_UPDATER_WAIT", "false") == "true", "wait until the migration is done")
+	flag.BoolVar(&noComplessed, "no-compressed", getEnv("PHOTON_UPDATER_NO_COMPRESSED", "false") == "true", "Archive is not compressed. Server will skip decompression")
+	flag.BoolVar(&force, "force", getEnv("PHOTON_UPDATER_FORCE", "false") == "true", "force to initiate migration")
 	flag.StringVar(&progressIntervalStr, "progress-interval", getEnv("PHOTON_UPDATER_PROGRESS_INTERVAL", "1m"), "progress interval. e.g. 1m, 5s")
 	flag.StringVar(&downloadSpeedLimitBytesPerSec, "download-speed-limit", getEnv("PHOTON_UPDATER_DOWNLOAD_SPEED_LIMIT", ""), "download speed limit in bytes per second (e.g. 10MB). default is unlimited")
 	flag.Parse()
@@ -67,23 +71,13 @@ func innerMain(ctx context.Context) error {
 	logger := logging.FromContext(ctx)
 
 	httpClient := cleanhttp.DefaultClient()
-	var (
-		archiveOptions  []photondata.ArchiveOption
-		downloadOptions []downloader.DownloaderOption
-	)
-	if databaseCountryCode != "" {
-		archiveOptions = append(archiveOptions, photondata.WithCountryCode(databaseCountryCode))
-	}
-	if downloadSpeedLimitBytesPerSec != "" {
-		limitBytes, err := humanize.ParseBytes(downloadSpeedLimitBytesPerSec)
-		if err != nil {
-			return fmt.Errorf("failed to parse download speed limit: %w", err)
-		}
-		downloadOptions = append(downloadOptions, downloader.WithDownloadSpeedLimit(float64(limitBytes)))
-	}
 	progressInterval, err := time.ParseDuration(progressIntervalStr)
 	if err != nil {
 		return fmt.Errorf("failed to parse progress interval: %w", err)
+	}
+	archiveOptions, downloadOptions, uploadOptions, err := initOptions(progressInterval)
+	if err != nil {
+		return err
 	}
 	archive := photondata.NewArchive(databaseURL, archiveOptions...)
 	dl := downloader.New(httpClient, downloadOptions...)
@@ -102,7 +96,7 @@ func innerMain(ctx context.Context) error {
 	}
 
 	logger.InfoContext(ctx, "start uploading photon database. this may take a while", "archive", archivePath)
-	if err := wrapperClient.MigrateStart(ctx, archivePath); err != nil {
+	if err := wrapperClient.MigrateStart(ctx, archivePath, uploadOptions...); err != nil {
 		return err
 	}
 	if waitUntilDone {
@@ -133,4 +127,38 @@ func getEnv(key, defaultValue string) string {
 		return defaultValue
 	}
 	return value
+}
+
+func initOptions(
+	progressInterval time.Duration,
+) (
+	[]photondata.ArchiveOption,
+	[]downloader.DownloaderOption,
+	[]photonwrapper.UploadOption,
+	error,
+) {
+	var (
+		archiveOptions  []photondata.ArchiveOption
+		downloadOptions []downloader.DownloaderOption
+		uploadOptions   []photonwrapper.UploadOption
+	)
+	downloadOptions = append(downloadOptions, downloader.WithProgressInterval(progressInterval))
+	uploadOptions = append(uploadOptions, photonwrapper.WithProgressInterval(progressInterval))
+	if downloadSpeedLimitBytesPerSec != "" {
+		limitBytes, err := humanize.ParseBytes(downloadSpeedLimitBytesPerSec)
+		if err != nil {
+			return nil, nil, nil, fmt.Errorf("failed to parse download speed limit: %w", err)
+		}
+		downloadOptions = append(downloadOptions, downloader.WithDownloadSpeedLimit(float64(limitBytes)))
+	}
+	if databaseCountryCode != "" {
+		archiveOptions = append(archiveOptions, photondata.WithCountryCode(databaseCountryCode))
+	}
+	if force {
+		uploadOptions = append(uploadOptions, photonwrapper.WithForceUpload())
+	}
+	if noComplessed {
+		uploadOptions = append(uploadOptions, photonwrapper.WithNoCompressedArchive())
+	}
+	return archiveOptions, downloadOptions, uploadOptions, nil
 }

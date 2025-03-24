@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/pddg/photon-container/internal/photondata"
+	"github.com/pddg/photon-container/internal/unarchiver"
 )
 
 type Downloader interface {
@@ -14,7 +15,7 @@ type Downloader interface {
 }
 
 type Unarchiver interface {
-	Unarchive(ctx context.Context, src io.Reader, dest string) error
+	Unarchive(ctx context.Context, src io.Reader, dest string, options ...unarchiver.UnarchiveOption) error
 }
 
 type PhotonServer interface {
@@ -34,4 +35,5 @@ type Migrator interface {
 	ReplaceMigrator
 	RemoveMigrator
 	State(ctx context.Context) (photondata.MigrationState, time.Time)
+	ResetState(ctx context.Context)
 }

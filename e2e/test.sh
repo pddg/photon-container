@@ -8,6 +8,12 @@ function log() {
     echo ""
 }
 
+function log_error() {
+    echo ""
+    echo "e2e: Error: $1"
+    echo ""
+}
+
 log "Starting e2e tests"
 
 docker compose up --build -d --wait
@@ -19,13 +25,17 @@ do
     if [ "$state" == "unknown" ]; then
         break
     fi
+    if [ "$i" -eq 20 ]; then
+        log_error "Wait timeout exceeded. Photon may not be running."
+        exit 1
+    fi
     sleep 1
 done
 
 log "Photon is up and running"
 
 log "Download and unarchive database of Photon"
-curl -i -X POST "http://localhost:8080/migrate/download?latest=true"
+curl -i -X POST "http://localhost:8080/migrate/download"
 
 log "Wait until the database is downloaded and unarchived"
 for i in $(seq 1 20)
@@ -33,6 +43,10 @@ do
     state=$(curl -sS "http://localhost:8080/migrate/status" | jq -r '.state')
     if [ "$state" == "migrated" ]; then
         break
+    fi
+    if [ "$i" -eq 20 ]; then
+        log_error "Wait timeout exceeded. Migration is not completed."
+        exit 1
     fi
     sleep 1
 done
@@ -44,13 +58,17 @@ do
     if [ "$state" == "Ok" ]; then
         break
     fi
+    if [ "$i" -eq 20 ]; then
+        log_error "Wait timeout exceeded. Photon is not ready."
+        exit 1
+    fi
     sleep 1
 done
 
 log "Photon is now ready for testing. Use the reverse geocoding endpoint to test it"
 FEATURES=$(curl -sS -X GET 'http://localhost:2322/reverse?lat=42.508004&lon=1.529161' | jq -r '.features')
 if [ $(echo "$FEATURES" | jq 'length') -eq 0 ]; then
-    log "Test failed"
+    log_error "Test failed"
     exit 1
 fi
 log Found features:

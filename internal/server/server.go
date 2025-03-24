@@ -4,8 +4,10 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/pddg/photon-container/internal/photondata"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	"github.com/pddg/photon-container/internal/photondata"
+	"github.com/pddg/photon-container/internal/updater"
 )
 
 type APIServer struct {
@@ -15,8 +17,8 @@ type APIServer struct {
 func NewAPIServer(
 	ctx context.Context,
 	migrator Migrator,
-	updater Updater,
-	archiveName photondata.Archive,
+	updater updater.UpdaterInterface,
+	archive photondata.Archive,
 ) *APIServer {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
@@ -24,7 +26,7 @@ func NewAPIServer(
 	})
 	mux.Handle("GET /metrics", promhttp.Handler())
 	mux.Handle("/migrate/status", NewMigrateStatusHandler(migrator))
-	mux.Handle("POST /migrate/download", NewLocalMigrateHandler(ctx, migrator, updater, archiveName))
+	mux.Handle("POST /migrate/download", NewLocalMigrateHandler(ctx, migrator, updater, archive))
 	mux.Handle("POST /migrate/upload", NewMigrateHandler(ctx, updater))
 
 	return &APIServer{

@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/pddg/photon-container/internal/logging"
 	"github.com/pddg/photon-container/internal/photondata"
 )
 
@@ -30,17 +31,24 @@ func NewClient(
 	}
 }
 
-func (c *Client) MigrateStart(ctx context.Context, archivePath string) error {
+func (c *Client) MigrateStart(ctx context.Context, archivePath string, options ...UploadOption) error {
+	opts := initUploadOptions(options...)
 	f, err := os.Open(archivePath)
 	if err != nil {
 		return fmt.Errorf("photonwrapper.Client.MigrateStart: failed to open %q: %w", archivePath, err)
 	}
 	defer f.Close()
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"migrate", f)
+	stat, err := f.Stat()
+	if err != nil {
+		return fmt.Errorf("photonwrapper.Client.MigrateStart: failed to get file size: %w", err)
+	}
+	p := NewProgress(ctx, f, stat.Size(), opts.progressInterval, logging.FromContext(ctx))
+	defer p.Stop()
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"migrate/upload", p)
 	if err != nil {
 		return err
 	}
+	req.URL.RawQuery = opts.toQuery().Encode()
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return err
@@ -84,4 +92,21 @@ func (c *Client) MigrateStatus(ctx context.Context) (*MigrateStatusResponse, err
 		return nil, fmt.Errorf("photonwrapper.Client.WaitForMigrate: failed to unmarshal response body: %w", err)
 	}
 	return res, nil
+}
+
+func (c *Client) ResetStatus(ctx context.Context) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, c.baseURL+"migrate/status", nil)
+	if err != nil {
+		return err
+	}
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("photonwrapper.Client.ResetStatus: failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+	_, _ = io.Copy(io.Discard, resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("photonwrapper.Client.ResetStatus: unexpected status code: %d", resp.StatusCode)
+	}
+	return nil
 }

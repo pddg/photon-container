@@ -7,13 +7,14 @@ import (
 	"time"
 
 	"github.com/dustin/go-humanize"
+
 	"github.com/pddg/photon-container/internal/logging"
 	"github.com/pddg/photon-container/internal/photondata"
 )
 
 type UpdaterInterface interface {
-	UpdateByLocalArchive(ctx context.Context, archive photondata.Archive) error
-	UpdateAsync(ctx context.Context, archive io.Reader) error
+	DownloadAndUpdate(ctx context.Context, archive photondata.Archive, options ...UpdateOption) error
+	UpdateAsync(ctx context.Context, archive io.Reader, options ...UpdateOption) error
 }
 
 type Updater struct {
@@ -46,19 +47,31 @@ func New(
 	}, nil
 }
 
-func (u *Updater) UpdateByLocalArchive(ctx context.Context, archive photondata.Archive, forceUpdate bool) error {
-	migratable, err := u.checkMigratability(ctx, archive)
-	if err != nil {
-		return fmt.Errorf("updater.Updater.UpdateByLocalArchive: failed to check migratability: %w", err)
+func (u *Updater) DownloadAndUpdate(ctx context.Context, archive photondata.Archive, options ...UpdateOption) error {
+	opts := initOptions(options...)
+	if opts.force {
+		logging.FromContext(ctx).WarnContext(ctx, "force update initiated")
+		u.migrator.ResetState(ctx)
+	} else {
+		archive = opts.getArchive(archive)
+		migratable, err := u.checkMigratability(ctx, archive)
+		if err != nil {
+			return fmt.Errorf("updater.Updater.UpdateByLocalArchive: failed to check migratability: %w", err)
+		}
+		if !migratable {
+			return fmt.Errorf("updater.Updater.UpdateByLocalArchive: database is up to date")
+		}
 	}
-	if !migratable && !forceUpdate {
-		return nil
-	}
-	return u.updaterImpl.UpdateByLocalArchive(ctx, archive)
+	return u.updaterImpl.DownloadAndUpdate(ctx, archive)
 }
 
-func (u *Updater) UpdateAsync(ctx context.Context, archive io.Reader) error {
-	return u.updaterImpl.UpdateAsync(ctx, archive)
+func (u *Updater) UpdateAsync(ctx context.Context, archive io.Reader, options ...UpdateOption) error {
+	opts := initOptions(options...)
+	if opts.force {
+		logging.FromContext(ctx).WarnContext(ctx, "force update initiated")
+		u.migrator.ResetState(ctx)
+	}
+	return u.updaterImpl.UpdateAsync(ctx, archive, options...)
 }
 
 func (u *Updater) checkMigratability(ctx context.Context, archive photondata.Archive) (bool, error) {

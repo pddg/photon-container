@@ -30,7 +30,7 @@ func NewUnarchiver(options ...UnarchiverOption) *Unarchiver {
 	return u
 }
 
-func (u *Unarchiver) Unarchive(ctx context.Context, archive io.Reader, destPath string) error {
+func (u *Unarchiver) Unarchive(ctx context.Context, archive io.Reader, destPath string, options ...UnarchiveOption) error {
 	logger := logging.FromContext(ctx)
 	logger.Info("Unarchive database", "dest", destPath)
 	destStat, err := os.Stat(destPath)
@@ -44,7 +44,7 @@ func (u *Unarchiver) Unarchive(ctx context.Context, archive io.Reader, destPath 
 			return fmt.Errorf("unarchiver.Unarchiver.Unarchive: destination %q is not a directory", destPath)
 		}
 	}
-	if err := u.unarchive(ctx, archive, destPath); err != nil {
+	if err := u.unarchive(ctx, archive, destPath, options...); err != nil {
 		if rmErr := os.RemoveAll(destPath); rmErr != nil {
 			err = errors.Join(err, fmt.Errorf("unarchiver.Unarchiver.Unarchive: failed to remove destination directory %q: %w", destPath, rmErr))
 		}
@@ -53,11 +53,25 @@ func (u *Unarchiver) Unarchive(ctx context.Context, archive io.Reader, destPath 
 	return nil
 }
 
-func (u *Unarchiver) unarchive(ctx context.Context, archive io.Reader, destPath string) error {
-	unzip := pbzip2.NewReader(ctx, archive)
-	limitedUnzip := shapeio.NewReaderWithContext(unzip, ctx)
-	limitedUnzip.SetRateLimit(u.unarchiveLimitBytesPerSec)
-	untar := tar.NewReader(limitedUnzip)
+type runtimeOption struct {
+	// noCompression specifies whether to skip decompression.
+	noCompression bool
+}
+
+func (u *Unarchiver) unarchive(ctx context.Context, archive io.Reader, destPath string, options ...UnarchiveOption) error {
+	opt := &runtimeOption{}
+	for _, option := range options {
+		option(opt)
+	}
+	var r io.Reader
+	if opt.noCompression {
+		r = archive
+	} else {
+		r = pbzip2.NewReader(ctx, archive)
+	}
+	limited := shapeio.NewReaderWithContext(r, ctx)
+	limited.SetRateLimit(u.unarchiveLimitBytesPerSec)
+	untar := tar.NewReader(limited)
 	for {
 		header, err := untar.Next()
 		if err != nil {

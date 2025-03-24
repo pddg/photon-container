@@ -37,8 +37,10 @@ func NewParallelUpdater(
 	}
 }
 
-func (u *ParallelUpdater) UpdateByLocalArchive(ctx context.Context, archive photondata.Archive) error {
+func (u *ParallelUpdater) DownloadAndUpdate(ctx context.Context, archive photondata.Archive, options ...UpdateOption) error {
 	logger := logging.FromContext(ctx).With("strategy", UpdateStrategyParallel)
+	opts := initOptions(options...)
+	archive = opts.getArchive(archive)
 
 	logger.InfoContext(ctx, "step 1/1: download Photon database")
 	archivePath := filepath.Join(u.photonDataDir, "photon-db.tar.bz2")
@@ -58,14 +60,16 @@ func (u *ParallelUpdater) UpdateByLocalArchive(ctx context.Context, archive phot
 	}
 	defer archiveFile.Close()
 	tempDir := filepath.Join(u.photonDataDir, "temp")
-	if err := u.unarchiver.Unarchive(ctx, archiveFile, tempDir); err != nil {
-		return fmt.Errorf("updater.ParallelUpdater.UpdateByLocalArchive: failed to unarchive to %q: %w", tempDir, err)
-	}
+	// Clean up the temp directory even if the unarchiving fails.
+	// Unarchiving may fail and leave some garbage files in the temp directory.
 	defer func() {
 		if err := os.RemoveAll(tempDir); err != nil {
 			logger.WarnContext(ctx, "failed to remove temp directory", "path", tempDir, "error", err)
 		}
 	}()
+	if err := u.unarchiver.Unarchive(ctx, archiveFile, tempDir); err != nil {
+		return fmt.Errorf("updater.ParallelUpdater.UpdateByLocalArchive: failed to unarchive to %q: %w", tempDir, err)
+	}
 
 	logger.InfoContext(ctx, "step 3/3: replace archive and restart Photon server")
 	if err := u.restartPhotonServer(ctx, tempDir); err != nil {
@@ -75,19 +79,26 @@ func (u *ParallelUpdater) UpdateByLocalArchive(ctx context.Context, archive phot
 	return nil
 }
 
-func (u *ParallelUpdater) UpdateAsync(ctx context.Context, archive io.Reader) error {
+func (u *ParallelUpdater) UpdateAsync(ctx context.Context, archive io.Reader, options ...UpdateOption) error {
 	logger := logging.FromContext(ctx).With("strategy", UpdateStrategyParallel)
-	logger.InfoContext(ctx, "step 1/2: unarchive Photon database")
+	opts := initOptions(options...)
 	tempDir := filepath.Join(u.photonDataDir, "temp")
-	if err := u.unarchiver.Unarchive(ctx, archive, tempDir); err != nil {
+	cleanup := func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			logger.WarnContext(ctx, "failed to remove temp directory", "path", tempDir, "error", err)
+		}
+	}
+
+	logger.InfoContext(ctx, "step 1/2: unarchive Photon database")
+	if err := u.unarchiver.Unarchive(ctx, archive, tempDir, opts.getUnarchiveOptions()...); err != nil {
+		// Clean up the temp directory before returning the error.
+		// Unarchiving may leave some garbage files in the temp directory.
+		cleanup()
 		return fmt.Errorf("updater.ParallelUpdater.UpdateAsync: failed to unarchive to %q: %w", tempDir, err)
 	}
 	go func() {
-		defer func() {
-			if err := os.RemoveAll(tempDir); err != nil {
-				logger.WarnContext(ctx, "failed to remove temp directory", "path", tempDir, "error", err)
-			}
-		}()
+		// Clean up the temp directory after the update.
+		defer cleanup()
 		logger.InfoContext(ctx, "step 2/2: replace archive and restart Photon server")
 		if err := u.restartPhotonServer(ctx, tempDir); err != nil {
 			logger.ErrorContext(ctx, "failed to restart Photon server", "error", err)
