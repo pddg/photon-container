@@ -2,6 +2,7 @@ package unarchiver
 
 import (
 	"archive/tar"
+	"compress/bzip2"
 	"context"
 	"errors"
 	"fmt"
@@ -10,7 +11,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/cosnicolaou/pbzip2"
 	"github.com/fujiwara/shapeio"
 
 	"github.com/pddg/photon-container/internal/logging"
@@ -67,7 +67,7 @@ func (u *Unarchiver) unarchive(ctx context.Context, archive io.Reader, destPath 
 	if opt.noCompression {
 		r = archive
 	} else {
-		r = pbzip2.NewReader(ctx, archive)
+		r = bzip2.NewReader(archive)
 	}
 	limited := shapeio.NewReaderWithContext(r, ctx)
 	limited.SetRateLimit(u.unarchiveLimitBytesPerSec)
