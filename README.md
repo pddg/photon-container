@@ -67,6 +67,9 @@ wget -O photon-db-updater \
 
 Then, download the archive.
 
+> [!WARNING]
+> More than 100 GiB of data will be downloaded from the internet. Depending on your network speed, the download may take a long time. 
+
 ```sh
 photon-db-updater \
     -download-only \
@@ -74,6 +77,9 @@ photon-db-updater \
 ```
 
 Decompress the archive via `pbzip2`.
+
+> [!WARNING]
+> About 200 GiB of data will be extracted from the archive. Depending on your CPU and memory, this process may take a long time.
 
 ```sh
 pbzip2 -d ./photon-db.tar.bz2
@@ -98,8 +104,8 @@ Configuration is done via environment variables. The following environment varia
 | `PHOTON_AGENT_DATABASE_URL` | The URL of the Photon database. | `https://download1.graphhopper.com/public/experimental/` |
 | `PHOTON_AGENT_DATABASE_COUNTRY_CODE` | The country code for the Photon index data. The code can be found from [here](https://download1.graphhopper.com/public/experimental/extracts/by-country-code/). | `` (full index data) |
 | `PHOTON_AGENT_UPDATE_STRATEGY` | The update strategy for the Photon index. Can be `sequential` or `parallel`. | `sequential` |
-| `PHOTON_AGENT_DOWNLOAD_SPEED_LIMIT` | The speed limit for downloading the Photon index data. | `` (no limit) |
-| `PHOTON_AGENT_IO_SPEED_LIMIT` | The speed limit for storage I/O operations. | `` (no limit) |
+| `PHOTON_AGENT_DOWNLOAD_SPEED_LIMIT` | The speed limit for downloading the Photon index data. e.g. `10MB` | (no limit) |
+| `PHOTON_AGENT_IO_SPEED_LIMIT` | The speed limit for storage I/O operations. e.g. `10MB` | (no limit) |
 | `PHOTON_AGENT_LOG_LEVEL` | The log level for the Photon agent. Can be `debug`, `info`, `warn`, or `error`. | `info` |
 | `PHOTON_AGENT_LOG_FORMAT` | The log format for the Photon agent. Can be `text` or `json`. | `json` |
 
@@ -107,83 +113,92 @@ Configuration is done via environment variables. The following environment varia
 
 The update strategy is determined by the combination of the `PHOTON_AGENT_UPDATE_STRATEGY` and how the archive is downloaded and extracted. `sequential` and `parallel` are the two update strategies, while `server` and `client` refer to where the archive is downloaded and decompressed.
 
-- `sequential` + `server`
-    - All processes are done on the server side.
+### `sequential` + `server`
+
+- All processes are done on the server side.
+    1. Stop the Photon process
+    2. Delete the old index
+    3. Download the new index
+    4. Extract the new index
+    5. Start the Photon process
+- Pros
+    - Simple
+    - No need to download the archive on the client side
+- Cons
+    - Requires twice the storage capacity of the extracted data
+        - Decompressed archive + New index
+        - About 400GiB of storage is required
+    - Long downtime
+        - Download time + Extracting time
+    - Large computation power required on the server side
+        - Decompressing the archive is CPU intensive
+
+### `sequential` + `client`
+
+- Download the archive on the client side and extract it on the server side.
+    1. Download and decompress the new index on client
+    2. Transfer the extracted data to the server
+    3. Agent initiates the update process
         1. Stop the Photon process
         2. Delete the old index
-        3. Download the new index
-        4. Extract the new index
-        5. Start the Photon process
-    - Pros
-        - Simple
-        - No need to download the archive on the client side
-    - Cons
-        - Requires three times the storage capacity of the extracted data
-            - Decompressed archive + New index + Old index
-            - About 500GiB of storage is required
-        - Long downtime
-            - Download time + Extracting time
-        - Large computation power required on the server side
-            - Decompressing the archive is CPU intensive
-- `sequential` + `client`
-    - Download the archive on the client side and extract it on the server side.
-        1. Download and decompress the new index on client
-        2. Transfer the extracted data to the server
-        3. Agent initiates the update process
-            1. Stop the Photon process
-            2. Delete the old index
-            3. Extract the new index
-            4. Start the Photon process
-    - Pros
-        - Minimal storage capacity required
-            - Only the size of the extracted data is required
-            - About 200GiB of storage is required
-        - Relatively short downtime (compared to `sequential` + `server`)
-            - Transfer time + Extracting time
-            - The transfer time is usually shorter than the download time (typically, local network speed is faster than the internet speed)
-    - Cons
-        - Requires a client device with sufficient storage capacity
-        - Requires some tools to download and extract the archive on the client side
-        - Large computation power required on the client side
-            - Decompressing the archive is CPU intensive
-- `parallel` + `server`
-    - All processes are done on the server side.
-        1. Download the new index
-        2. Extract the new index
-        3. Stop the Photon process
-        4. Replace the old index with new one
-        5. Start the Photon process
-    - Pros
-        - Minimal downtime
-            - Only the time to stop and start the Photon process
-        - No need to download the archive on the client side
-    - Cons
-        - Requires three times the storage capacity of the extracted data
-            - Decompressed archive + New index + Old index
-            - About 500GiB of storage is required
-        - Large computation power required on the server side
-            - Decompressing the archive is CPU intensive
-        - `parallel` + `client`
-    - Download the archive on the client side and extract it on the server side.
-        1. Download the new index on client
-        2. Decompress the archive on client
-        3. Transfer the extracted data to the server
-        4. Agent initiates the update process
-            1. Extract the new index
-            2. Stop the Photon process
-            3. Replace the old index with new one
-            4. Start the Photon process
-    - Pros
-        - Minimal downtime
-            - Only the time to stop and start the Photon process
-        - Relatively less storage capacity required (compared to `sequential` + `server`)
-            - New index + Old index
-            - About 400GiB of storage is required
-    - Cons
-        - Requires a client device with sufficient storage capacity
-        - Requires some tools to download and extract the archive on the client side
-        - Large computation power required on the client side
-            - Decompressing the archive is CPU intensive
+        3. Extract the new index
+        4. Start the Photon process
+- Pros
+    - Minimal storage capacity required
+        - Only the size of the extracted data is required
+        - About 200GiB of storage is required
+    - Relatively short downtime (compared to `sequential` + `server`)
+        - Transfer time + Extracting time
+        - The transfer time is usually shorter than the download time (typically, local network speed is faster than the internet speed)
+- Cons
+    - Requires a client device with sufficient storage capacity
+    - Requires some tools to download and extract the archive on the client side
+    - Large computation power required on the client side
+        - Decompressing the archive is CPU intensive
+
+### `parallel` + `server`
+
+- All processes are done on the server side.
+    1. Download the new index
+    2. Extract the new index
+    3. Stop the Photon process
+    4. Replace the old index with new one
+    5. Start the Photon process
+- Pros
+    - Minimal downtime
+        - Only the time to stop and start the Photon process
+    - No need to download the archive on the client side
+- Cons
+    - Requires three times the storage capacity of the extracted data
+        - Decompressed archive + New index + Old index
+        - About 500GiB of storage is required
+    - Large computation power required on the server side
+        - Decompressing the archive is CPU intensive
+
+### `parallel` + `client`
+
+- Download the archive on the client side and extract it on the server side.
+    1. Download the new index on client
+    2. Decompress the archive on client
+    3. Transfer the extracted data to the server
+    4. Agent initiates the update process
+        1. Extract the new index
+        2. Stop the Photon process
+        3. Replace the old index with new one
+        4. Start the Photon process
+- Pros
+    - Minimal downtime
+        - Only the time to stop and start the Photon process
+    - Relatively less storage capacity required (compared to `sequential` + `server`)
+        - New index + Old index
+        - About 400GiB of storage is required
+- Cons
+    - Requires a client device with sufficient storage capacity
+    - Requires some tools to download and extract the archive on the client side
+    - Large computation power required on the client side
+        - Decompressing the archive is CPU intensive
+
+### Which one to choose?
 
 If you have enough storage capacity and computing resource on the server side, `parallel` + `server` is the best way to update the index.
 

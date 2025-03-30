@@ -147,8 +147,8 @@ cd /workdir
 
 photon-db-updater \
   -archive ./photon-db.tar \
-  -no-compression \
-  -photon-agent-url http://api.photon.svc/ \
+  -no-compressed \
+  -photon-agent-url http://api.photon.svc:8080/ \
   --wait
 ```
 
