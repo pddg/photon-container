@@ -1,0 +1,19 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: photon
+  name: api
+spec:
+  ports:
+    - name: photon
+      port: 80
+      protocol: TCP
+      targetPort: 2322
+    - name: management
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app.kubernetes.io/name: photon

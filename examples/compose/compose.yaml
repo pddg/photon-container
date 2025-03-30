@@ -1,0 +1,22 @@
+services:
+  photon:
+    image: ghcr.io/pddg/photon:latest
+    environment:
+      # Where to download the data from
+      # Only supports OpenSearch compatible version.
+      # Currently it is only tested with GraphHopper's experimental data.
+      - PHOTON_WRAPPER_DATABASE_URL=https://download1.graphhopper.com/public/experimental/
+      # Country code if you want to use only a specific country's data
+      - PHOTON_WRAPPER_DATABASE_COUNTRY_CODE=ad
+    volumes:
+      # Mount the photon data volume
+      # /photon/photon_data is the default path for the index data
+      - photon_data:/photon/photon_data
+    restart: unless-stopped
+    ports:
+      # management port
+      - "8080:8080"
+      # photon port
+      - "2322:2322"
+volumes:
+  photon_data:
