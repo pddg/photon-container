@@ -107,7 +107,7 @@ func newFileLogger(logFile string) (*cmdFileLogger, *cmdFileLogger, func(), erro
 }
 
 func (l *cmdFileLogger) Write(p []byte) (n int, err error) {
-	l.logger.Info(string(p), "stream", l.stream)
+	l.logger.InfoContext(context.Background(), string(p), "stream", l.stream)
 	return len(p), nil
 }
 

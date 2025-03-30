@@ -28,7 +28,7 @@ func TestMain(m *testing.M) {
 	defer cancel()
 
 	if err := testMain(ctx, m); err != nil {
-		logger.Error("failed", "error", err)
+		logger.ErrorContext(ctx, "failed", "error", err)
 		os.Exit(1)
 	}
 }

@@ -59,7 +59,7 @@ func main() {
 	}
 	ctx := logging.NewContext(context.Background(), logger)
 	if err := innerMain(ctx); err != nil {
-		logger.Error("failed", "error", err)
+		logger.ErrorContext(ctx, "failed", "error", err)
 		os.Exit(1)
 	}
 }

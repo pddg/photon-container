@@ -185,7 +185,7 @@ func (d *Downloader) Download(ctx context.Context, archive photondata.Archive, d
 
 func (d *Downloader) getMD5Sum(ctx context.Context, archiveUrl string) (string, error) {
 	logger := logging.FromContext(ctx)
-	logger.Info("verifying m5sum of downloaded file")
+	logger.InfoContext(ctx, "verifying m5sum of downloaded file")
 	url := archiveUrl + ".md5"
 	req, err := retryablehttp.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {

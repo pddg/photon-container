@@ -16,13 +16,6 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - name: Run unit tests
-        run: |
-          make test
-      - name: Build all
-        run: |
-          make all
-          make archive
       - uses: actions/cache/restore@v4
         with:
           path: ~/.local/share/aquaproj-aqua
@@ -32,6 +25,13 @@ jobs:
       - uses: aquaproj/aqua-installer@e2d0136abcf70b7a2f6f505720640750557c4b33 # v3.1.1
         with:
           aqua_version: v2.46.0
+      - name: Run unit tests
+        run: |
+          make test
+      - name: Build all
+        run: |
+          make all
+          make archive
       - name: Run e2e tests
         run: |
           make test-e2e

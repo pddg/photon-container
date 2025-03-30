@@ -67,7 +67,7 @@ func main() {
 	}
 	ctx := logging.NewContext(context.Background(), logger)
 	if err := innerMain(ctx); err != nil {
-		logger.Error("failed", "error", err)
+		logger.ErrorContext(ctx, "failed", "error", err)
 		os.Exit(1)
 	}
 }
@@ -125,9 +125,9 @@ func innerMain(ctx context.Context) error {
 
 	if !disableMetrics {
 		latestDataMetrics := metrics.NewLatestPhotonDataMetrics(ctx, dl, photonArchive)
-		prometheus.Register(latestDataMetrics)
+		prometheus.MustRegister(latestDataMetrics)
 		migrateMetrics := metrics.NewMigrateStatusMetrics(ctx, migrator)
-		prometheus.Register(migrateMetrics)
+		prometheus.MustRegister(migrateMetrics)
 	}
 
 	apiHandler := server.NewAPIServer(ctx, migrator, updater, photonArchive)
@@ -138,8 +138,9 @@ func innerMain(ctx context.Context) error {
 	}
 	go func() {
 		<-ctx.Done()
-		if err := srv.Shutdown(context.WithoutCancel(ctx)); err != nil {
-			logger.Error("failed to shutdown server", "error", err)
+		shutdownCtx := context.WithoutCancel(ctx)
+		if err := srv.Shutdown(shutdownCtx); err != nil {
+			logger.ErrorContext(shutdownCtx, "failed to shutdown server", "error", err)
 		}
 	}()
 	logger.InfoContext(ctx, "starting photon", "port", 2322)

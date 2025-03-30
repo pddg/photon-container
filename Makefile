@@ -46,10 +46,22 @@ image: all
 clean:
 	rm -rf $(BUILD_DIR)
 
+.PHONY: lint
+lint:
+	golangci-lint run --timeout 5m ./...
+
+.PHONY: lint-fix
+lint-fix:
+	golangci-lint run --fix --timeout 5m ./...
+
+.PHONY: fmt
+fmt:
+	golangci-lint fmt ./...
+
 .PHONY: test
-test:
-	go test -race -vet=all ./internal/...
+test: lint
+	go test -race -vet=off ./internal/...
 
 .PHONY: test-e2e
 test-e2e: $(UPDATER_BINARIES)
-	go test -vet=all ./e2e/...
+	go test -vet=off ./e2e/...

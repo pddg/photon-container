@@ -59,7 +59,7 @@ func (s *PhotonServer) Start(ctx context.Context) error {
 			return nil
 		}
 	}
-	logger.Info("starting photon server", "command", s.photonServer.String())
+	logger.InfoContext(ctx, "starting photon server", "command", s.photonServer.String())
 	if err := s.photonServer.Start(); err != nil {
 		return fmt.Errorf("photon.PhotonServer.Start: failed to start Photon server: %w", err)
 	}

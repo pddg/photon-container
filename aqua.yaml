@@ -12,3 +12,4 @@ registries:
 packages:
 - name: kubernetes-sigs/kind@v0.27.0
 - name: kubernetes-sigs/kustomize@kustomize/v5.6.0
+- name: golangci/golangci-lint@v2.0.2
