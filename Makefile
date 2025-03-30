@@ -51,5 +51,5 @@ test:
 	go test -race -vet=all ./internal/...
 
 .PHONY: test-e2e
-test-e2e:
-	./e2e/test.sh
+test-e2e: $(UPDATER_BINARIES)
+	go test -vet=all ./e2e/...
