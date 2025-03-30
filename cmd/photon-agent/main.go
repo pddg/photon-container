@@ -41,24 +41,24 @@ var (
 )
 
 func main() {
-	flag.StringVar(&logLevel, "log-level", getEnv("PHOTON_WRAPPER_LOG_LEVEL", "info"), "log level")
-	flag.StringVar(&logFormat, "log-format", getEnv("PHOTON_WRAPPER_LOG_FORMAT", "json"), "log format")
-	// Photon wrapper server options
+	flag.StringVar(&logLevel, "log-level", getEnv("PHOTON_AGENT_LOG_LEVEL", "info"), "log level")
+	flag.StringVar(&logFormat, "log-format", getEnv("PHOTON_AGENT_LOG_FORMAT", "json"), "log format")
+	// Photon agent server options
 	flag.IntVar(&port, "port", 8080, "port to listen on")
 	flag.BoolVar(&disableMetrics, "disable-metrics", false, "disable photon database metrics (/metrics only provide go runtime information)")
 
 	// Photon database source options
-	flag.StringVar(&databaseURL, "database-url", getEnv("PHOTON_WRAPPER_DATABASE_URL", downloader.DefaultDatabaseURL), "URL of the Photon database to download")
-	flag.StringVar(&databaseCountryCode, "database-country-code", getEnv("PHOTON_WRAPPER_DATABASE_COUNTRY_CODE", ""), "country code of the Photon database to download. If empty, download the full database")
+	flag.StringVar(&databaseURL, "database-url", getEnv("PHOTON_AGENT_DATABASE_URL", downloader.DefaultDatabaseURL), "URL of the Photon database to download")
+	flag.StringVar(&databaseCountryCode, "database-country-code", getEnv("PHOTON_AGENT_DATABASE_COUNTRY_CODE", ""), "country code of the Photon database to download. If empty, download the full database")
 
 	// Photon server options
-	flag.StringVar(&photonJarPath, "photon-jar-path", getEnv("PHOTON_WRAPPER_PHOTON_JAR_PATH", "/photon/photon.jar"), "path to the Photon jar file")
-	flag.StringVar(&photonDir, "photon-dir", getEnv("PHOTON_WRAPPER_PHOTON_DIR", "/photon"), "directory to store the Photon data")
-	flag.StringVar(&updateStrategy, "update-strategy", getEnv("PHOTON_WRAPPER_UPDATE_STRATEGY", string(updater.DefaultUpdateStrategy)), "update strategy for the Photon database")
+	flag.StringVar(&photonJarPath, "photon-jar-path", getEnv("PHOTON_AGENT_PHOTON_JAR_PATH", "/photon/photon.jar"), "path to the Photon jar file")
+	flag.StringVar(&photonDir, "photon-dir", getEnv("PHOTON_AGENT_PHOTON_DIR", "/photon"), "directory to store the Photon data")
+	flag.StringVar(&updateStrategy, "update-strategy", getEnv("PHOTON_AGENT_UPDATE_STRATEGY", string(updater.DefaultUpdateStrategy)), "update strategy for the Photon database")
 
 	// Speed limit options
-	flag.StringVar(&downloadSpeedLimitBytesPerSec, "download-speed-limit", getEnv("PHOTON_WRAPPER_DOWNLOAD_SPEED_LIMIT", ""), "download speed limit in bytes per second (e.g. 10MB). default is unlimited")
-	flag.StringVar(&ioSpeedLimitBytesPerSec, "io-speed-limit", getEnv("PHOTON_WRAPPER_IO_SPEED_LIMIT", ""), "I/O speed limit in bytes per second (e.g. 100MB). default is unlimited")
+	flag.StringVar(&downloadSpeedLimitBytesPerSec, "download-speed-limit", getEnv("PHOTON_AGENT_DOWNLOAD_SPEED_LIMIT", ""), "download speed limit in bytes per second (e.g. 10MB). default is unlimited")
+	flag.StringVar(&ioSpeedLimitBytesPerSec, "io-speed-limit", getEnv("PHOTON_AGENT_IO_SPEED_LIMIT", ""), "I/O speed limit in bytes per second (e.g. 100MB). default is unlimited")
 	flag.Parse()
 
 	logger, err := logging.Configure(logLevel, logFormat, os.Stderr)

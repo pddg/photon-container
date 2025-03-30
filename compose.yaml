@@ -9,7 +9,7 @@ services:
         - GIT_SHA="dev"
     environment:
       # Small country code for testing
-      - PHOTON_WRAPPER_DATABASE_COUNTRY_CODE=ad
+      - PHOTON_AGENT_DATABASE_COUNTRY_CODE=ad
     restart: unless-stopped
     ports:
       - "8080:8080"

@@ -1,4 +1,4 @@
-package photonwrapper
+package photonagent
 
 import (
 	"context"
@@ -35,12 +35,12 @@ func (c *Client) MigrateStart(ctx context.Context, archivePath string, options .
 	opts := initUploadOptions(options...)
 	f, err := os.Open(archivePath)
 	if err != nil {
-		return fmt.Errorf("photonwrapper.Client.MigrateStart: failed to open %q: %w", archivePath, err)
+		return fmt.Errorf("photonagent.Client.MigrateStart: failed to open %q: %w", archivePath, err)
 	}
 	defer f.Close()
 	stat, err := f.Stat()
 	if err != nil {
-		return fmt.Errorf("photonwrapper.Client.MigrateStart: failed to get file size: %w", err)
+		return fmt.Errorf("photonagent.Client.MigrateStart: failed to get file size: %w", err)
 	}
 	p := NewProgress(ctx, f, stat.Size(), opts.progressInterval, logging.FromContext(ctx))
 	defer p.Stop()
@@ -56,10 +56,10 @@ func (c *Client) MigrateStart(ctx context.Context, archivePath string, options .
 	defer resp.Body.Close()
 	bodyByte, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("photonwrapper.Client.MigrateStart: failed to read response body: %w", err)
+		return fmt.Errorf("photonagent.Client.MigrateStart: failed to read response body: %w", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("photonwrapper.Client.MigrateStart: unexpected status code: %d %s", resp.StatusCode, string(bodyByte))
+		return fmt.Errorf("photonagent.Client.MigrateStart: unexpected status code: %d %s", resp.StatusCode, string(bodyByte))
 	}
 	return nil
 }
@@ -81,15 +81,15 @@ func (c *Client) MigrateStatus(ctx context.Context) (*MigrateStatusResponse, err
 	defer resp.Body.Close()
 	bodyByte, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("photonwrapper.Client.WaitForMigrate: failed to read response body: %w", err)
+		return nil, fmt.Errorf("photonagent.Client.WaitForMigrate: failed to read response body: %w", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("photonwrapper.Client.WaitForMigrate: unexpected status code: %d %s", resp.StatusCode, string(bodyByte))
+		return nil, fmt.Errorf("photonagent.Client.WaitForMigrate: unexpected status code: %d %s", resp.StatusCode, string(bodyByte))
 	}
 
 	var res *MigrateStatusResponse
 	if err := json.Unmarshal(bodyByte, &res); err != nil {
-		return nil, fmt.Errorf("photonwrapper.Client.WaitForMigrate: failed to unmarshal response body: %w", err)
+		return nil, fmt.Errorf("photonagent.Client.WaitForMigrate: failed to unmarshal response body: %w", err)
 	}
 	return res, nil
 }
@@ -101,12 +101,12 @@ func (c *Client) ResetStatus(ctx context.Context) error {
 	}
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("photonwrapper.Client.ResetStatus: failed to send request: %w", err)
+		return fmt.Errorf("photonagent.Client.ResetStatus: failed to send request: %w", err)
 	}
 	defer resp.Body.Close()
 	_, _ = io.Copy(io.Discard, resp.Body)
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("photonwrapper.Client.ResetStatus: unexpected status code: %d", resp.StatusCode)
+		return fmt.Errorf("photonagent.Client.ResetStatus: unexpected status code: %d", resp.StatusCode)
 	}
 	return nil
 }

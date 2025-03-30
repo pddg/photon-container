@@ -5,10 +5,10 @@ GOOSs := darwin linux
 GOARCHs := amd64 arm64
 
 UPDATER_BINARIES := $(foreach GOOS,$(GOOSs),$(foreach GOARCH,$(GOARCHs),$(BUILD_DIR)/photon-db-updater-$(GOOS)-$(GOARCH)))
-WRAPPER_BINARIES := $(foreach GOOS,$(GOOSs),$(foreach GOARCH,$(GOARCHs),$(BUILD_DIR)/photon-wrapper-$(GOOS)-$(GOARCH)))
+AGENT_BINARIES := $(foreach GOOS,$(GOOSs),$(foreach GOARCH,$(GOARCHs),$(BUILD_DIR)/photon-agent-$(GOOS)-$(GOARCH)))
 
 .PHONY: all
-all: $(UPDATER_BINARIES) $(WRAPPER_BINARIES)
+all: $(UPDATER_BINARIES) $(AGENT_BINARIES)
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
@@ -22,15 +22,13 @@ $(BUILD_DIR)/$(1)-$(2)-$(3): $(GO_SRCS) | $(BUILD_DIR)
 		go build -trimpath -o $$@ ./cmd/$(1)
 endef
 $(foreach GOOS,$(GOOSs),$(foreach GOARCH,$(GOARCHs),$(eval $(call go-cross-build,photon-db-updater,$(GOOS),$(GOARCH)))))
-$(foreach GOOS,$(GOOSs),$(foreach GOARCH,$(GOARCHs),$(eval $(call go-cross-build,photon-wrapper,$(GOOS),$(GOARCH)))))
+$(foreach GOOS,$(GOOSs),$(foreach GOARCH,$(GOARCHs),$(eval $(call go-cross-build,photon-agent,$(GOOS),$(GOARCH)))))
 
 .PHONY: archive
 archive: build.tar
 
-build.tar: $(UPDATER_BINARIES) $(WRAPPER_BINARIES)
-	tar cf $@ \
-		$(UPDATER_BINARIES) \
-		$(WRAPPER_BINARIES)
+build.tar: $(UPDATER_BINARIES) $(AGENT_BINARIES)
+	tar cf $@ $^
 
 .PHONY: image
 image: all

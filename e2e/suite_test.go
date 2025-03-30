@@ -29,7 +29,7 @@ func Test_UploadFromClientSide(t *testing.T) {
 	bastionExec(t,
 		"/bin/photon-db-uploader",
 		"-download-to", "/tmp/photon-db.tar.bz2",
-		"-photon-wrapper-url", photonAgentUrl,
+		"-photon-agent-url", photonAgentUrl,
 		"-database-country-code", "ad",
 	)
 
@@ -57,7 +57,7 @@ func Test_UploadUncompressedFromClientSide(t *testing.T) {
 	)
 	bastionExec(t,
 		"/bin/photon-db-uploader",
-		"-photon-wrapper-url", photonAgentUrl,
+		"-photon-agent-url", photonAgentUrl,
 		"-archive", "/tmp/client-uncompressed.tar",
 		"-no-compressed",
 		"-wait",

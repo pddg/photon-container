@@ -11,7 +11,7 @@
 ## Steps to Deploy
 
 > [!NOTE]
-> By default, the environment variable `PHOTON_WRAPPER_DATABASE_COUNTRY_CODE` is set, which limits the download to data for a few countries with smaller index sizes.
+> By default, the environment variable `PHOTON_AGENT_DATABASE_COUNTRY_CODE` is set, which limits the download to data for a few countries with smaller index sizes.
 > You can find country codes from [here](https://download1.graphhopper.com/public/experimental/extracts/by-country-code/).
 
 > [!WARNING]

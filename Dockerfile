@@ -22,10 +22,10 @@ LABEL maintainer="github.com/pddg" \
 USER nonroot
 
 COPY ./build/photon-db-updater-${TARGETOS}-${TARGETARCH} /usr/local/bin/photon-db-updater
-COPY ./build/photon-wrapper-${TARGETOS}-${TARGETARCH} /usr/local/bin/photon-wrapper
+COPY ./build/photon-agent-${TARGETOS}-${TARGETARCH} /usr/local/bin/photon-agent
 
 WORKDIR /photon
 
 COPY --chown=nonroot:nonroot --from=builder /photon/photon.jar /photon/photon.jar
 
-ENTRYPOINT ["/usr/local/bin/photon-wrapper"]
+ENTRYPOINT ["/usr/local/bin/photon-agent"]

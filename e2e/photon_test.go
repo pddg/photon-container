@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/pddg/photon-container/internal/client/photonwrapper"
+	"github.com/pddg/photon-container/internal/client/photonagent"
 	"github.com/pddg/photon-container/internal/photondata"
 )
 
@@ -36,7 +36,7 @@ func waitUntilPhotonReady(t *testing.T, photonUrl, photonAgentUrl string) {
 			t.Logf("failed to execute command: %v", err)
 			return false
 		}
-		var resp photonwrapper.MigrateStatusResponse
+		var resp photonagent.MigrateStatusResponse
 		if err := json.Unmarshal(out, &resp); err != nil {
 			t.Logf("failed to unmarshal response: %v", err)
 			return false

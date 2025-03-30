@@ -32,11 +32,11 @@ spec:
             # URL to download the data from.
             # Only OpenSearch-compatible versions are supported.
             # Currently, only experimental data from GraphHopper is available.
-            - name: PHOTON_WRAPPER_DATABASE_URL
+            - name: PHOTON_AGENT_DATABASE_URL
               value: https://download1.graphhopper.com/public/experimental/
             # Specify the country code if you want to use data for a specific country.
             # For example, `ad` contains only a small amount of data.
-            - name: PHOTON_WRAPPER_DATABASE_COUNTRY_CODE
+            - name: PHOTON_AGENT_DATABASE_COUNTRY_CODE
               value: ad
           volumeMounts:
             - mountPath: /photon/photon_data
