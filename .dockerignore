@@ -4,3 +4,4 @@ kubernetes
 .github
 .gitignore
 .git
+*.tar
