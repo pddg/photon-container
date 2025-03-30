@@ -3,7 +3,6 @@ module github.com/pddg/photon-container
 go 1.24.1
 
 require (
-	github.com/cosnicolaou/pbzip2 v1.0.5
 	github.com/dustin/go-humanize v1.0.1
 	github.com/fujiwara/shapeio v1.0.0
 	github.com/hashicorp/go-cleanhttp v0.5.2

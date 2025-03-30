@@ -1,0 +1,98 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app.kubernetes.io/name: photon
+  name: photon
+spec:
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: photon
+  serviceName: photon
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: photon
+    spec:
+      containers:
+        - name: photon
+          image: ghcr.io/pddg/photon:latest
+          ports:
+            - containerPort: 8080
+              name: management
+            - containerPort: 2322
+              name: photon
+          env:
+            # URL to download the data from.
+            # Only OpenSearch-compatible versions are supported.
+            # Currently, only experimental data from GraphHopper is available.
+            - name: PHOTON_AGENT_DATABASE_URL
+              value: https://download1.graphhopper.com/public/experimental/
+            # Specify the country code if you want to use data for a specific country.
+            # For example, `ad` contains only a small amount of data.
+            - name: PHOTON_AGENT_DATABASE_COUNTRY_CODE
+              value: ad
+          volumeMounts:
+            - mountPath: /photon/photon_data
+              name: photon-data
+            # /tmp should be writable for OpenSearch to work properly.
+            - mountPath: /tmp
+              name: photon-tmp
+          # Liveness/Readiness probes should not be used for the photon port.
+          # photon-container will stop photon while updating the index.
+          # If you use a readiness probe for photon, Kubernetes will stop routing traffic to the container.
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          # You can adjust the resource requests and limits based on your requirements.
+          # resources:
+          #   requests:
+          #     cpu: 100m
+          #     memory: 1Gi
+          #   limits:
+          #     memory: 3Gi
+      volumes:
+        - name: photon-tmp
+          emptyDir: {}
+          # You can use an ephemeral volume instead of emptyDir.
+          # ephemeral:
+          #   volumeClaimTemplate:
+          #     spec:
+          #       accessModes: [ "ReadWriteOnce" ]
+          #       resources:
+          #         requests:
+          #           storage: 500Mi
+      securityContext:
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        runAsNonRoot: true
+  volumeClaimTemplates:
+    - metadata:
+        name: photon-data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            # A large data volume is required for the full index data.
+            # Downloading, decompressing, and unarchiving the data inside the container requires a minimum of 300Gi.
+            # Downloading and decompressing the archive outside the container,
+            # then uploading the data to the container, requires a minimum of 190Gi.
+            # If you use data for only a small country, you can reduce the size.
+            storage: 5Gi

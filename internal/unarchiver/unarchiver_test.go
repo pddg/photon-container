@@ -5,9 +5,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/pddg/photon-container/internal/unarchiver"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/pddg/photon-container/internal/unarchiver"
 )
 
 func Test_Unarchiver_Unarchive(t *testing.T) {

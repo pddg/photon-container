@@ -1,14 +1,4 @@
-FROM golang:1.24.1 AS builder
-
-WORKDIR /workdir
-
-COPY go.mod go.sum /workdir
-
-RUN go mod download
-
-COPY . /workdir
-
-RUN make all 
+FROM mirror.gcr.io/debian:stable-slim AS builder
 
 ARG PHOTON_VERSION
 ARG PHOTON_SHA256SUM
@@ -19,6 +9,8 @@ RUN echo "${PHOTON_SHA256SUM}  /photon/photon.jar" | sha256sum -c -
 
 FROM gcr.io/distroless/java21-debian12:nonroot
 
+ARG TARGETOS
+ARG TARGETARCH
 ARG PHOTON_VERSION
 ARG GIT_SHA
 
@@ -29,11 +21,11 @@ LABEL maintainer="github.com/pddg" \
 
 USER nonroot
 
-COPY --chown=nonroot:nonroot --from=builder /workdir/build/photon-wrapper /usr/local/bin/photon-wrapper
-COPY --chown=nonroot:nonroot --from=builder /workdir/build/photon-db-updater /usr/local/bin/photon-db-updater
+COPY ./build/photon-db-updater-${TARGETOS}-${TARGETARCH} /usr/local/bin/photon-db-updater
+COPY ./build/photon-agent-${TARGETOS}-${TARGETARCH} /usr/local/bin/photon-agent
 
 WORKDIR /photon
 
 COPY --chown=nonroot:nonroot --from=builder /photon/photon.jar /photon/photon.jar
 
-ENTRYPOINT ["/usr/local/bin/photon-wrapper"]
+ENTRYPOINT ["/usr/local/bin/photon-agent"]

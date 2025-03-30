@@ -52,8 +52,9 @@ func (h *MigrateStatusHandler) get(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *MigrateStatusHandler) delete(w http.ResponseWriter, r *http.Request) {
-	logging.FromContext(r.Context()).Info("Reset migration state")
-	h.migrator.ResetState(r.Context())
+	ctx := r.Context()
+	logging.FromContext(ctx).InfoContext(ctx, "Reset migration state")
+	h.migrator.ResetState(ctx)
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -119,7 +120,7 @@ func (h *MigrateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Query().Get("force") == "true" {
 		options = append(options, updater.WithForceUpdate())
 	}
-	if r.URL.Query().Get("no_complession") == "true" {
+	if r.URL.Query().Get("no_compression") == "true" {
 		options = append(options, updater.WithUnarchiveOptions(
 			unarchiver.NoCompression(),
 		))

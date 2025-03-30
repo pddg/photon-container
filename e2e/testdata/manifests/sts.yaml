@@ -1,0 +1,13 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app.kubernetes.io/name: photon
+  name: photon
+spec:
+  template:
+    spec:
+      containers:
+        - name: photon
+          # Should not pull the image from the registry in E2E tests
+          imagePullPolicy: Never

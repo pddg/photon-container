@@ -13,7 +13,7 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/hashicorp/go-cleanhttp"
 
-	"github.com/pddg/photon-container/internal/client/photonwrapper"
+	"github.com/pddg/photon-container/internal/client/photonagent"
 	"github.com/pddg/photon-container/internal/downloader"
 	"github.com/pddg/photon-container/internal/logging"
 	"github.com/pddg/photon-container/internal/photondata"
@@ -30,21 +30,21 @@ var (
 	waitUntilDone                 bool
 	noComplessed                  bool
 	force                         bool
-	photonWrapperURL              string
+	photonAgentURL                string
 	progressIntervalStr           string
 	downloadSpeedLimitBytesPerSec string
 )
 
 func main() {
-	flag.StringVar(&logLevel, "log-level", getEnv("PHOTON_WRAPPER_LOG_LEVEL", "info"), "log level")
-	flag.StringVar(&logFormat, "log-format", getEnv("PHOTON_WRAPPER_LOG_FORMAT", "json"), "log format")
+	flag.StringVar(&logLevel, "log-level", getEnv("PHOTON_AGENT_LOG_LEVEL", "info"), "log level")
+	flag.StringVar(&logFormat, "log-format", getEnv("PHOTON_AGENT_LOG_FORMAT", "json"), "log format")
 
-	flag.StringVar(&databaseURL, "database-url", getEnv("PHOTON_WRAPPER_DATABASE_URL", downloader.DefaultDatabaseURL), "URL of the Photon database to download")
-	flag.StringVar(&databaseCountryCode, "database-country-code", getEnv("PHOTON_WRAPPER_DATABASE_COUNTRY_CODE", ""), "country code of the Photon database to download. If empty, download the full database")
+	flag.StringVar(&databaseURL, "database-url", getEnv("PHOTON_AGENT_DATABASE_URL", downloader.DefaultDatabaseURL), "URL of the Photon database to download")
+	flag.StringVar(&databaseCountryCode, "database-country-code", getEnv("PHOTON_AGENT_DATABASE_COUNTRY_CODE", ""), "country code of the Photon database to download. If empty, download the full database")
 
 	flag.StringVar(&archivePath, "archive", getEnv("PHOTON_UPDATER_ARCHIVE", ""), "path to the local archive if you want to use it instead of downloading")
 	flag.StringVar(&archiveDownloadPath, "download-to", getEnv("PHOTON_UPDATER_DOWNLOAD_TO", "/tmp/photon-db.tar.bz2"), "path to download the archive. Skip downloading if md5sum matches with the existing file")
-	flag.StringVar(&photonWrapperURL, "photon-wrapper-url", getEnv("PHOTON_WRAPPER_URL", "http://localhost:8080"), "URL of the photon-wrapper server")
+	flag.StringVar(&photonAgentURL, "photon-agent-url", getEnv("PHOTON_AGENT_URL", "http://localhost:8080"), "URL of the photon-agent server")
 	flag.BoolVar(&downloadOnly, "download-only", getEnv("PHOTON_UPDATER_DOWNLOAD_ONLY", "false") == "true", "only download the archive and exit")
 	flag.BoolVar(&waitUntilDone, "wait", getEnv("PHOTON_UPDATER_WAIT", "false") == "true", "wait until the migration is done")
 	flag.BoolVar(&noComplessed, "no-compressed", getEnv("PHOTON_UPDATER_NO_COMPRESSED", "false") == "true", "Archive is not compressed. Server will skip decompression")
@@ -59,7 +59,7 @@ func main() {
 	}
 	ctx := logging.NewContext(context.Background(), logger)
 	if err := innerMain(ctx); err != nil {
-		logger.Error("failed", "error", err)
+		logger.ErrorContext(ctx, "failed", "error", err)
 		os.Exit(1)
 	}
 }
@@ -81,7 +81,7 @@ func innerMain(ctx context.Context) error {
 	}
 	archive := photondata.NewArchive(databaseURL, archiveOptions...)
 	dl := downloader.New(httpClient, downloadOptions...)
-	wrapperClient := photonwrapper.NewClient(httpClient, photonWrapperURL)
+	agentClient := photonagent.NewClient(httpClient, photonAgentURL)
 
 	if archivePath == "" {
 		if err := dl.Download(ctx, archive, archiveDownloadPath); err != nil {
@@ -96,7 +96,7 @@ func innerMain(ctx context.Context) error {
 	}
 
 	logger.InfoContext(ctx, "start uploading photon database. this may take a while", "archive", archivePath)
-	if err := wrapperClient.MigrateStart(ctx, archivePath, uploadOptions...); err != nil {
+	if err := agentClient.MigrateStart(ctx, archivePath, uploadOptions...); err != nil {
 		return err
 	}
 	if waitUntilDone {
@@ -105,7 +105,7 @@ func innerMain(ctx context.Context) error {
 			case <-ctx.Done():
 				return ctx.Err()
 			case <-time.After(progressInterval):
-				resp, err := wrapperClient.MigrateStatus(ctx)
+				resp, err := agentClient.MigrateStatus(ctx)
 				if err != nil {
 					return err
 				}
@@ -134,16 +134,16 @@ func initOptions(
 ) (
 	[]photondata.ArchiveOption,
 	[]downloader.DownloaderOption,
-	[]photonwrapper.UploadOption,
+	[]photonagent.UploadOption,
 	error,
 ) {
 	var (
 		archiveOptions  []photondata.ArchiveOption
 		downloadOptions []downloader.DownloaderOption
-		uploadOptions   []photonwrapper.UploadOption
+		uploadOptions   []photonagent.UploadOption
 	)
 	downloadOptions = append(downloadOptions, downloader.WithProgressInterval(progressInterval))
-	uploadOptions = append(uploadOptions, photonwrapper.WithProgressInterval(progressInterval))
+	uploadOptions = append(uploadOptions, photonagent.WithProgressInterval(progressInterval))
 	if downloadSpeedLimitBytesPerSec != "" {
 		limitBytes, err := humanize.ParseBytes(downloadSpeedLimitBytesPerSec)
 		if err != nil {
@@ -155,10 +155,10 @@ func initOptions(
 		archiveOptions = append(archiveOptions, photondata.WithCountryCode(databaseCountryCode))
 	}
 	if force {
-		uploadOptions = append(uploadOptions, photonwrapper.WithForceUpload())
+		uploadOptions = append(uploadOptions, photonagent.WithForceUpload())
 	}
 	if noComplessed {
-		uploadOptions = append(uploadOptions, photonwrapper.WithNoCompressedArchive())
+		uploadOptions = append(uploadOptions, photonagent.WithNoCompressedArchive())
 	}
 	return archiveOptions, downloadOptions, uploadOptions, nil
 }

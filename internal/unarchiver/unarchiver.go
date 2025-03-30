@@ -2,6 +2,7 @@ package unarchiver
 
 import (
 	"archive/tar"
+	"compress/bzip2"
 	"context"
 	"errors"
 	"fmt"
@@ -10,7 +11,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/cosnicolaou/pbzip2"
 	"github.com/fujiwara/shapeio"
 
 	"github.com/pddg/photon-container/internal/logging"
@@ -32,13 +32,13 @@ func NewUnarchiver(options ...UnarchiverOption) *Unarchiver {
 
 func (u *Unarchiver) Unarchive(ctx context.Context, archive io.Reader, destPath string, options ...UnarchiveOption) error {
 	logger := logging.FromContext(ctx)
-	logger.Info("Unarchive database", "dest", destPath)
+	logger.InfoContext(ctx, "Unarchive database", "dest", destPath)
 	destStat, err := os.Stat(destPath)
 	if err != nil {
 		if err := os.MkdirAll(destPath, 0755); err != nil {
 			return fmt.Errorf("unarchiver.Unarchiver.Unarchive: failed to create destination directory %q: %w", destPath, err)
 		}
-		logger.Info("Created destination directory", "dest", destPath)
+		logger.InfoContext(ctx, "Created destination directory", "dest", destPath)
 	} else {
 		if !destStat.IsDir() {
 			return fmt.Errorf("unarchiver.Unarchiver.Unarchive: destination %q is not a directory", destPath)
@@ -67,7 +67,7 @@ func (u *Unarchiver) unarchive(ctx context.Context, archive io.Reader, destPath 
 	if opt.noCompression {
 		r = archive
 	} else {
-		r = pbzip2.NewReader(ctx, archive)
+		r = bzip2.NewReader(archive)
 	}
 	limited := shapeio.NewReaderWithContext(r, ctx)
 	limited.SetRateLimit(u.unarchiveLimitBytesPerSec)
