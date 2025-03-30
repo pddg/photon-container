@@ -37,5 +37,16 @@ func setup(t *testing.T, ns string) (string, string) {
 
 	photonAgentUrl := fmt.Sprintf("http://api.%s.svc.cluster.local:8080/", ns)
 	photonUrl := fmt.Sprintf("http://api.%s.svc.cluster.local:80/", ns)
+
+	// Wait untile the service is ready
+	require.Eventually(t, func() bool {
+		_, err := unsafeBastionExec(t, "curl", "-sS", "-X", "GET", photonAgentUrl+"healthz")
+		if err != nil {
+			t.Logf("failed to execute command: %v", err)
+			return false
+		}
+		t.Logf("Photon service is ready")
+		return true
+	}, 1*time.Minute, 2*time.Second)
 	return photonUrl, photonAgentUrl
 }
