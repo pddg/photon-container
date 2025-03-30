@@ -32,7 +32,7 @@ build.tar: $(UPDATER_BINARIES) $(AGENT_BINARIES)
 
 .PHONY: image
 image: all
-	source .env && \
+	. ./.env && \
 	docker build \
 		-t ghcr.io/pddg/photon:latest \
 		--build-arg PHOTON_VERSION=$${PHOTON_VERSION} \
