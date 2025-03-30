@@ -61,5 +61,5 @@ test: lint
 	go test -race -vet=off ./internal/...
 
 .PHONY: test-e2e
-test-e2e: $(UPDATER_BINARIES)
+test-e2e: image $(UPDATER_BINARIES)
 	go test -vet=off ./e2e/...
