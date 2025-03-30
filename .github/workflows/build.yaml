@@ -43,6 +43,7 @@ jobs:
       - name: upload build artifacts
         uses: actions/upload-artifact@v4
         with:
+          name: build
           path: build.tar
       - uses: actions/cache/save@v4
         if: github.event_name == 'push'
@@ -60,7 +61,7 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          path: build.tar
+          name: build
       - name: Extract artifacts
         run: |
           tar -xf build.tar
@@ -126,7 +127,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/download-artifact@v4
         with:
-          path: build.tar
+          name: build
       - name: Extract artifacts
         run: |
           tar -xf build.tar
