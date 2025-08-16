@@ -34,6 +34,7 @@ jobs:
           make archive
       - name: Run e2e tests
         run: |
+          aqua i
           make test-e2e
       - name: upload e2e test logs
         if: failure()
