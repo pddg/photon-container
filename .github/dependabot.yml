@@ -1,6 +1,5 @@
 version: 2
 updates:
-  # GitHub Actionsのアクションのバージョンを自動更新
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -11,11 +10,8 @@ updates:
     open-pull-requests-limit: 5
     reviewers:
       - "pddg"
-    assignees:
-      - "pddg"
-    commit-message:
-      prefix: "chore(deps):"
-      include: "scope"
     labels:
       - "dependencies"
       - "github-actions"
+    cooldown:
+      default-days: 3
