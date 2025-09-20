@@ -1,0 +1,21 @@
+version: 2
+updates:
+  # GitHub Actionsのアクションのバージョンを自動更新
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "saturday"
+      time: "09:00"
+      timezone: "Asia/Tokyo"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "pddg"
+    assignees:
+      - "pddg"
+    commit-message:
+      prefix: "chore(deps):"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"
