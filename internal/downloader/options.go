@@ -3,7 +3,7 @@ package downloader
 import "time"
 
 const (
-	DefaultDatabaseURL = "https://download1.graphhopper.com/public/experimental/"
+	DefaultDatabaseURL = "https://download1.graphhopper.com/public/"
 )
 
 type DownloaderOption func(*Downloader)
