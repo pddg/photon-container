@@ -5,6 +5,7 @@ services:
       # Where to download the data from
       # Only supports archives for photon 1.x or later.
       - PHOTON_AGENT_DATABASE_URL=https://download1.graphhopper.com/public/europe/andorra/photon-db-andorra-1.0-latest.tar.bz2
+      # Photon listens only 127.0.0.1 by default.
       - PHOTON_AGENT_PHOTON_LISTEN_IP=0.0.0.0
     volumes:
       # Mount the photon data volume

@@ -33,6 +33,7 @@ spec:
             # Only archives for photon 1.x or later are supported.
             - name: PHOTON_AGENT_DATABASE_URL
               value: https://download1.graphhopper.com/public/europe/andorra/photon-db-andorra-1.0-latest.tar.bz2
+            # Photon listens only 127.0.0.1 by default. This is required to use photon out side of this Pod.
             - name: PHOTON_AGENT_PHOTON_LISTEN_IP
               valueFrom:
                 fieldRef:
