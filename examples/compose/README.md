@@ -11,8 +11,7 @@
 ## Steps to Deploy
 
 > [!NOTE]
-> By default, the environment variable `PHOTON_AGENT_DATABASE_COUNTRY_CODE` is set, which limits the download to data for a few countries with smaller index sizes.
-> You can find country codes from [here](https://download1.graphhopper.com/public/experimental/extracts/by-country-code/).
+> By default, the environment variable `PHOTON_AGENT_DATABASE_URL` is set, which limits the download to data for a few countries with smaller index sizes.
 
 > [!WARNING]
 > If you plan to use the full-size index, ensure that the volume has enough capacity to accommodate both the compressed archive and the extracted data. This requires at least 350 GiB of storage space.

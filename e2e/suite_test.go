@@ -4,6 +4,10 @@ import (
 	"testing"
 )
 
+const (
+	testDataURL = "https://download1.graphhopper.com/public/europe/andorra/photon-db-andorra-1.0-latest.tar.bz2"
+)
+
 func Test_ServerSideDownload(t *testing.T) {
 	t.Parallel()
 	ns := "server-side-dl"
@@ -30,7 +34,7 @@ func Test_UploadFromClientSide(t *testing.T) {
 		"/bin/photon-db-uploader",
 		"-download-to", "/tmp/photon-db.tar.bz2",
 		"-photon-agent-url", photonAgentUrl,
-		"-database-country-code", "ad",
+		"-database-url", testDataURL,
 	)
 
 	// Verify
@@ -50,7 +54,7 @@ func Test_UploadUncompressedFromClientSide(t *testing.T) {
 		"/bin/photon-db-uploader",
 		"-download-to", "/tmp/client-uncompressed.tar.bz2",
 		"-download-only",
-		"-database-country-code", "ad",
+		"-database-url", testDataURL,
 	)
 	bastionExec(t,
 		"bzip2", "-d", "/tmp/client-uncompressed.tar.bz2",

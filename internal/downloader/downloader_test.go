@@ -62,12 +62,12 @@ func Test_Downloader_Download(t *testing.T) {
 				w.Write(want)
 			}))
 			defer srv.Close()
-			archive := photondata.NewArchive(srv.URL, photondata.WithArchiveName("test"))
+			archive, err := photondata.NewArchive(srv.URL, photondata.WithArchiveName("test"))
+			require.NoError(t, err)
 			d := downloader.New(srv.Client(), tc.options...)
 
 			// Exercise
-			err := d.Download(t.Context(), archive, dest)
-
+			err = d.Download(t.Context(), archive, dest)
 			// Verify
 			require.NoError(t, err)
 			assert.Equal(t, requestPathWant, requestPathGot, "requested path is wrong")
@@ -91,12 +91,12 @@ func Test_Downloader_Download(t *testing.T) {
 			w.Write([]byte("hello, world"))
 		}))
 		defer srv.Close()
-		archive := photondata.NewArchive(srv.URL, photondata.WithArchiveName("test"))
+		archive, err := photondata.NewArchive(srv.URL, photondata.WithArchiveName("test"))
+		require.NoError(t, err)
 		d := downloader.New(srv.Client())
 
 		// Exercise
-		err := d.Download(t.Context(), archive, dest)
-
+		err = d.Download(t.Context(), archive, dest)
 		// Verify
 		require.Error(t, err)
 	})
@@ -111,7 +111,8 @@ func Test_Downloader_GetLastModified(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer srv.Close()
-	archive := photondata.NewArchive(srv.URL, photondata.WithArchiveName("test"))
+	archive, err := photondata.NewArchive(srv.URL, photondata.WithArchiveName("test"))
+	require.NoError(t, err)
 	d := downloader.New(srv.Client())
 
 	// Exercise

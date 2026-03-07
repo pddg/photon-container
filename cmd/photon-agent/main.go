@@ -31,7 +31,7 @@ var (
 	logLevel                      string
 	logFormat                     string
 	databaseURL                   string
-	databaseCountryCode           string
+	listenIP                      string
 	updateStrategy                string
 	downloadSpeedLimitBytesPerSec string
 	ioSpeedLimitBytesPerSec       string
@@ -48,13 +48,13 @@ func main() {
 	flag.BoolVar(&disableMetrics, "disable-metrics", false, "disable photon database metrics (/metrics only provide go runtime information)")
 
 	// Photon database source options
-	flag.StringVar(&databaseURL, "database-url", getEnv("PHOTON_AGENT_DATABASE_URL", downloader.DefaultDatabaseURL), "URL of the Photon database to download")
-	flag.StringVar(&databaseCountryCode, "database-country-code", getEnv("PHOTON_AGENT_DATABASE_COUNTRY_CODE", ""), "country code of the Photon database to download. If empty, download the full database")
+	flag.StringVar(&databaseURL, "database-url", getEnv("PHOTON_AGENT_DATABASE_URL", photondata.DefaultDatabaseURL), "URL of the Photon database to download")
 
 	// Photon server options
 	flag.StringVar(&photonJarPath, "photon-jar-path", getEnv("PHOTON_AGENT_PHOTON_JAR_PATH", "/photon/photon.jar"), "path to the Photon jar file")
 	flag.StringVar(&photonDir, "photon-dir", getEnv("PHOTON_AGENT_PHOTON_DIR", "/photon"), "directory to store the Photon data")
 	flag.StringVar(&updateStrategy, "update-strategy", getEnv("PHOTON_AGENT_UPDATE_STRATEGY", string(updater.DefaultUpdateStrategy)), "update strategy for the Photon database")
+	flag.StringVar(&listenIP, "photon-listen-ip", getEnv("PHOTON_AGENT_PHOTON_LISTEN_IP", "127.0.0.1"), "IP address to listen on by photon")
 
 	// Speed limit options
 	flag.StringVar(&downloadSpeedLimitBytesPerSec, "download-speed-limit", getEnv("PHOTON_AGENT_DOWNLOAD_SPEED_LIMIT", ""), "download speed limit in bytes per second (e.g. 10MB). default is unlimited")
@@ -101,14 +101,16 @@ func innerMain(ctx context.Context) error {
 		}
 		downloaderOptions = append(downloaderOptions, downloader.WithDownloadSpeedLimit(downloadSpeedLimit))
 	}
-	if databaseCountryCode != "" {
-		archiveOptions = append(archiveOptions, photondata.WithCountryCode(databaseCountryCode))
-	}
 
-	photonArchive := photondata.NewArchive(databaseURL, archiveOptions...)
+	photonArchive, err := photondata.NewArchive(databaseURL, archiveOptions...)
+	if err != nil {
+		return fmt.Errorf("invalid archive: %w", err)
+	}
 	dl := downloader.New(httpClient, downloaderOptions...)
 	ua := unarchiver.NewUnarchiver(unarchiverOptions...)
-	photonServer := photon.NewPhotonServer(ctx, photonJarPath, photonDir)
+	photonServer := photon.NewPhotonServer(ctx, photonJarPath, photonDir, photon.WithArgs(
+		"-listen-ip", listenIP,
+	))
 	photonDataDir := filepath.Join(photonDir, "photon_data")
 	migrator := photondata.NewMigrator(photonDataDir, httpClient)
 	updater, err := updater.New(

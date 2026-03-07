@@ -3,11 +3,9 @@ services:
     image: ghcr.io/pddg/photon:latest
     environment:
       # Where to download the data from
-      # Only supports OpenSearch compatible version.
-      # Currently it is only tested with GraphHopper's experimental data.
-      - PHOTON_AGENT_DATABASE_URL=https://download1.graphhopper.com/public/experimental/
-      # Country code if you want to use only a specific country's data
-      - PHOTON_AGENT_DATABASE_COUNTRY_CODE=ad
+      # Only supports archives for photon 1.x or later.
+      - PHOTON_AGENT_DATABASE_URL=https://download1.graphhopper.com/public/europe/andorra/photon-db-andorra-1.0-latest.tar.bz2
+      - PHOTON_AGENT_PHOTON_LISTEN_IP=0.0.0.0
     volumes:
       # Mount the photon data volume
       # /photon/photon_data is the default path for the index data

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus/testutil"
+	"github.com/stretchr/testify/require"
 
 	"github.com/pddg/photon-container/internal/metrics"
 	"github.com/pddg/photon-container/internal/photondata"
@@ -87,10 +88,12 @@ photon_latest_database_last_modified_timestamp_seconds{database_name="%s",databa
 		first := time.Now().UTC().Truncate(time.Second)
 		ticker := newMockTicker()
 		downloader := newMockDownloader(first, nil)
+		archive, err := photondata.NewArchive(baseURL, photondata.WithArchiveName(dbPath))
+		require.NoError(t, err)
 		c := metrics.NewLatestPhotonDataMetrics(
 			t.Context(),
 			downloader,
-			photondata.NewArchive(baseURL, photondata.WithArchiveName(dbPath)),
+			archive,
 			metrics.WithTicker(ticker.C()),
 		)
 
@@ -115,10 +118,12 @@ photon_latest_database_last_modified_timestamp_seconds{database_name="%s",databa
 		initial := time.Now().UTC().Truncate(time.Second)
 		ticker := newMockTicker()
 		downloader := newMockDownloader(initial, nil)
+		archive, err := photondata.NewArchive(baseURL, photondata.WithArchiveName(dbPath))
+		require.NoError(t, err)
 		c := metrics.NewLatestPhotonDataMetrics(
 			t.Context(),
 			downloader,
-			photondata.NewArchive(baseURL, photondata.WithArchiveName(dbPath)),
+			archive,
 			metrics.WithTicker(ticker.C()),
 		)
 

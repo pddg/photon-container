@@ -19,9 +19,8 @@ Started container has no data. You can call API to download data from the intern
 > This accounts for up to twice the size of the extracted data due to the simultaneous storage of the archive and its expanded contents.
 
 > [!NOTE]
-> If you want to test with small data, you can specify `PHOTON_AGENT_DATABASE_COUNTRY_CODE` .
-> Example manifest uses `PHOTON_AGENT_DATABASE_COUNTRY_CODE: ad`.
-> You can find country codes from [here](https://download1.graphhopper.com/public/experimental/extracts/by-country-code/).
+> If you want to test with small data, you can specify `PHOTON_AGENT_DATABASE_URL` .
+> Example manifest uses [andorra's geo data](https://download1.graphhopper.com/public/europe/andorra/index.html).
 
 ```bash
 # Port forward to management API

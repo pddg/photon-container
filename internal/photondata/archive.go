@@ -2,26 +2,37 @@ package photondata
 
 import (
 	"fmt"
-	"strings"
+	"net/url"
+	"path"
+)
+
+const (
+	DefaultDatabaseURL = "https://download1.graphhopper.com/public/photon-db-planet-1.0-latest.tar.bz"
 )
 
 type Archive struct {
-	countryCode string
 	baseURL     string
 	archiveName string
 }
 
-func NewArchive(baseURL string, options ...ArchiveOption) Archive {
-	if !strings.HasSuffix(baseURL, "/") {
-		baseURL += "/"
+func NewArchive(archiveURL string, options ...ArchiveOption) (Archive, error) {
+	u, err := url.Parse(archiveURL)
+	if err != nil {
+		return Archive{}, fmt.Errorf("photondata.NewArchive: %w", err)
+	}
+	file := path.Base(u.Path)
+	dir := path.Dir(u.Path)
+	if dir == "." {
+		dir = ""
 	}
 	a := Archive{
-		baseURL: baseURL,
+		baseURL:     u.Scheme + "://" + u.Host + dir,
+		archiveName: file,
 	}
 	for _, option := range options {
 		option(&a)
 	}
-	return a
+	return a, nil
 }
 
 func (a *Archive) String() string {
@@ -29,24 +40,15 @@ func (a *Archive) String() string {
 }
 
 func (a Archive) Name() string {
-	if a.archiveName != "" {
-		return a.archiveName
-	}
-	if a.countryCode == "" {
-		return "photon-db-latest.tar.bz2"
-	}
-	return fmt.Sprintf("photon-db-%s-latest.tar.bz2", a.countryCode)
+	return a.archiveName
 }
 
 func (a Archive) BaseURL() string {
-	if a.countryCode == "" {
-		return a.baseURL
-	}
-	return a.baseURL + fmt.Sprintf("extracts/by-country-code/%s/", a.countryCode)
+	return a.baseURL
 }
 
 func (a Archive) URL() string {
-	return a.BaseURL() + a.Name()
+	return a.BaseURL() + "/" + a.Name()
 }
 
 func (a Archive) FromArchiveName(name string) Archive {
@@ -55,12 +57,6 @@ func (a Archive) FromArchiveName(name string) Archive {
 }
 
 type ArchiveOption func(*Archive)
-
-func WithCountryCode(countryCode string) ArchiveOption {
-	return func(a *Archive) {
-		a.countryCode = countryCode
-	}
-}
 
 func WithArchiveName(name string) ArchiveOption {
 	return func(a *Archive) {
