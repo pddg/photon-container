@@ -2,10 +2,6 @@ package downloader
 
 import "time"
 
-const (
-	DefaultDatabaseURL = "https://download1.graphhopper.com/public/experimental/"
-)
-
 type DownloaderOption func(*Downloader)
 
 // WithoutProgress disables the progress tracking of the downloader.

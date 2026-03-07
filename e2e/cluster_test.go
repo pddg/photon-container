@@ -2,6 +2,7 @@ package e2e_test
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -13,6 +14,10 @@ func setup(t *testing.T, ns string) (string, string) {
 	t.Helper()
 	kubectl(t, "create", "ns", ns)
 	t.Cleanup(func() {
+		if os.Getenv("DEBUG") == "true" {
+			t.Logf("skip deleting %q namespace since DEBUG=true", ns)
+			return
+		}
 		kubectl(t, "delete", "ns", ns)
 	})
 

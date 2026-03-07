@@ -8,8 +8,8 @@ services:
         - PHOTON_SHA256SUM=${PHOTON_SHA256SUM}
         - GIT_SHA="dev"
     environment:
-      # Small country code for testing
-      - PHOTON_AGENT_DATABASE_COUNTRY_CODE=ad
+      # Small country data for testing
+      - PHOTON_AGENT_DATABASE_URL=https://download1.graphhopper.com/public/europe/andorra/photon-db-andorra-1.0-latest.tar.bz2
     restart: unless-stopped
     ports:
       - "8080:8080"

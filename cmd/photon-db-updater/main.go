@@ -23,7 +23,6 @@ var (
 	logLevel                      string
 	logFormat                     string
 	databaseURL                   string
-	databaseCountryCode           string
 	archivePath                   string
 	archiveDownloadPath           string
 	downloadOnly                  bool
@@ -39,8 +38,7 @@ func main() {
 	flag.StringVar(&logLevel, "log-level", getEnv("PHOTON_AGENT_LOG_LEVEL", "info"), "log level")
 	flag.StringVar(&logFormat, "log-format", getEnv("PHOTON_AGENT_LOG_FORMAT", "json"), "log format")
 
-	flag.StringVar(&databaseURL, "database-url", getEnv("PHOTON_AGENT_DATABASE_URL", downloader.DefaultDatabaseURL), "URL of the Photon database to download")
-	flag.StringVar(&databaseCountryCode, "database-country-code", getEnv("PHOTON_AGENT_DATABASE_COUNTRY_CODE", ""), "country code of the Photon database to download. If empty, download the full database")
+	flag.StringVar(&databaseURL, "database-url", getEnv("PHOTON_AGENT_DATABASE_URL", photondata.DefaultDatabaseURL), "URL of the Photon database to download")
 
 	flag.StringVar(&archivePath, "archive", getEnv("PHOTON_UPDATER_ARCHIVE", ""), "path to the local archive if you want to use it instead of downloading")
 	flag.StringVar(&archiveDownloadPath, "download-to", getEnv("PHOTON_UPDATER_DOWNLOAD_TO", "/tmp/photon-db.tar.bz2"), "path to download the archive. Skip downloading if md5sum matches with the existing file")
@@ -79,7 +77,10 @@ func innerMain(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	archive := photondata.NewArchive(databaseURL, archiveOptions...)
+	archive, err := photondata.NewArchive(databaseURL, archiveOptions...)
+	if err != nil {
+		return fmt.Errorf("invalid archive: %w", err)
+	}
 	dl := downloader.New(httpClient, downloadOptions...)
 	agentClient := photonagent.NewClient(httpClient, photonAgentURL)
 
@@ -150,9 +151,6 @@ func initOptions(
 			return nil, nil, nil, fmt.Errorf("failed to parse download speed limit: %w", err)
 		}
 		downloadOptions = append(downloadOptions, downloader.WithDownloadSpeedLimit(float64(limitBytes)))
-	}
-	if databaseCountryCode != "" {
-		archiveOptions = append(archiveOptions, photondata.WithCountryCode(databaseCountryCode))
 	}
 	if force {
 		uploadOptions = append(uploadOptions, photonagent.WithForceUpload())

@@ -3,7 +3,7 @@ FROM mirror.gcr.io/debian:stable-slim AS builder
 ARG PHOTON_VERSION
 ARG PHOTON_SHA256SUM
 
-ADD https://github.com/komoot/photon/releases/download/${PHOTON_VERSION}/photon-opensearch-${PHOTON_VERSION}.jar /photon/photon.jar
+ADD https://github.com/komoot/photon/releases/download/${PHOTON_VERSION}/photon-${PHOTON_VERSION}.jar /photon/photon.jar
 
 RUN echo "${PHOTON_SHA256SUM}  /photon/photon.jar" | sha256sum -c -
 

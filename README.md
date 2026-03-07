@@ -101,8 +101,7 @@ Configuration is done via environment variables. The following environment varia
 
 | Environment Variable | Description | Default Value |
 |----------------------|-------------|---------------|
-| `PHOTON_AGENT_DATABASE_URL` | The URL of the Photon database. | `https://download1.graphhopper.com/public/experimental/` |
-| `PHOTON_AGENT_DATABASE_COUNTRY_CODE` | The country code for the Photon index data. The code can be found from [here](https://download1.graphhopper.com/public/experimental/extracts/by-country-code/). | `` (full index data) |
+| `PHOTON_AGENT_DATABASE_URL` | The URL of the Photon database. | `https://download1.graphhopper.com/public/photon-db-planet-1.0-latest.tar.bz2` |
 | `PHOTON_AGENT_UPDATE_STRATEGY` | The update strategy for the Photon index. Can be `sequential` or `parallel`. | `sequential` |
 | `PHOTON_AGENT_DOWNLOAD_SPEED_LIMIT` | The speed limit for downloading the Photon index data. e.g. `10MB` | (no limit) |
 | `PHOTON_AGENT_IO_SPEED_LIMIT` | The speed limit for storage I/O operations. e.g. `10MB` | (no limit) |

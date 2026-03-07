@@ -30,14 +30,14 @@ spec:
               name: photon
           env:
             # URL to download the data from.
-            # Only OpenSearch-compatible versions are supported.
-            # Currently, only experimental data from GraphHopper is available.
+            # Only archives for photon 1.x or later are supported.
             - name: PHOTON_AGENT_DATABASE_URL
-              value: https://download1.graphhopper.com/public/experimental/
-            # Specify the country code if you want to use data for a specific country.
-            # For example, `ad` contains only a small amount of data.
-            - name: PHOTON_AGENT_DATABASE_COUNTRY_CODE
-              value: ad
+              value: https://download1.graphhopper.com/public/europe/andorra/photon-db-andorra-1.0-latest.tar.bz2
+            # Photon listens only 127.0.0.1 by default. This is required to use photon out side of this Pod.
+            - name: PHOTON_AGENT_PHOTON_LISTEN_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
           volumeMounts:
             - mountPath: /photon/photon_data
               name: photon-data
