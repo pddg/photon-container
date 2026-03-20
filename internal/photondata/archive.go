@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	DefaultDatabaseURL = "https://download1.graphhopper.com/public/photon-db-planet-1.0-latest.tar.bz"
+	DefaultDatabaseURL = "https://download1.graphhopper.com/public/photon-db-planet-1.0-latest.tar.bz2"
 )
 
 type Archive struct {
