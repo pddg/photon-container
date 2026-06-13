@@ -38,6 +38,9 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
+            # Photon v1.2.0 or later accepts the default language for geocoding results. The default is "en" (English).
+            - name: PHOTON_AGENT_PHOTON_DEFAULT_LANGUAGE
+              value: ja
           volumeMounts:
             - mountPath: /photon/photon_data
               name: photon-data
