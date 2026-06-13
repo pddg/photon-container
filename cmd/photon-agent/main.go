@@ -32,6 +32,7 @@ var (
 	logFormat                     string
 	databaseURL                   string
 	listenIP                      string
+	defaultLanguage               string
 	updateStrategy                string
 	downloadSpeedLimitBytesPerSec string
 	ioSpeedLimitBytesPerSec       string
@@ -55,6 +56,7 @@ func main() {
 	flag.StringVar(&photonDir, "photon-dir", getEnv("PHOTON_AGENT_PHOTON_DIR", "/photon"), "directory to store the Photon data")
 	flag.StringVar(&updateStrategy, "update-strategy", getEnv("PHOTON_AGENT_UPDATE_STRATEGY", string(updater.DefaultUpdateStrategy)), "update strategy for the Photon database")
 	flag.StringVar(&listenIP, "photon-listen-ip", getEnv("PHOTON_AGENT_PHOTON_LISTEN_IP", "127.0.0.1"), "IP address to listen on by photon")
+	flag.StringVar(&defaultLanguage, "photon-default-language", getEnv("PHOTON_AGENT_PHOTON_DEFAULT_LANGUAGE", "en"), "default language for the Photon server")
 
 	// Speed limit options
 	flag.StringVar(&downloadSpeedLimitBytesPerSec, "download-speed-limit", getEnv("PHOTON_AGENT_DOWNLOAD_SPEED_LIMIT", ""), "download speed limit in bytes per second (e.g. 10MB). default is unlimited")
@@ -110,6 +112,7 @@ func innerMain(ctx context.Context) error {
 	ua := unarchiver.NewUnarchiver(unarchiverOptions...)
 	photonServer := photon.NewPhotonServer(ctx, photonJarPath, photonDir, photon.WithArgs(
 		"-listen-ip", listenIP,
+		"-default-language", defaultLanguage,
 	))
 	photonDataDir := filepath.Join(photonDir, "photon_data")
 	migrator := photondata.NewMigrator(photonDataDir, httpClient)
